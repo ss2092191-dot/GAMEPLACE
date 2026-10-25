@@ -1,0 +1,178 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GAMEPLACE | Play More, Have Fun</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#090d1b;color:#fff;font-family:Arial,sans-serif}
+header{padding:26px 18px;text-align:center;background:linear-gradient(135deg,#16104a,#073d60)}
+h1{font-size:42px;margin:0;color:#54e8ff;letter-spacing:3px}
+header p{color:#d4d8ff}
+nav{padding:14px;text-align:center;background:#10162b}
+nav a{color:#54e8ff;text-decoration:none;margin:0 12px}
+.hero{text-align:center;padding:40px 15px 25px}
+.hero h2{font-size:30px;margin:0 0 12px}
+.hero p{color:#b9c5df}
+#search{padding:12px;width:min(90%,350px);border:1px solid #465078;border-radius:10px;background:#111a31;color:white}
+.games{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:18px;padding:22px;max-width:1150px;margin:auto}
+.card{background:#131b32;border:1px solid #293454;border-radius:16px;padding:22px;text-align:center;transition:.2s}
+.card:hover{transform:translateY(-5px);border-color:#54e8ff}
+.emoji{font-size:43px}
+.card h3{margin:12px 0 8px}
+.card p{color:#b5bfd9;min-height:36px;font-size:14px}
+button{cursor:pointer;border:0;border-radius:9px;padding:11px 16px;background:#54e8ff;color:#07101d;font-weight:bold}
+button:hover{filter:brightness(1.12)}
+.play{background:#7c5cff;color:white;width:100%}
+footer{text-align:center;padding:28px;background:#10162b;color:#aeb9d4}
+#modal{display:none;position:fixed;inset:0;background:#000c;z-index:5;padding:15px;overflow:auto}
+.panel{background:#111a31;border:1px solid #54e8ff;border-radius:16px;max-width:600px;margin:35px auto;padding:22px}
+#gameArea{text-align:center;min-height:170px;padding:15px 0}
+#gameArea input{padding:10px;border-radius:7px;border:1px solid #526080;background:#090d1b;color:white;max-width:95%}
+#gameArea button{margin:5px}
+#gameArea .cell{width:75px;height:65px;font-size:25px}
+#board{display:grid;grid-template-columns:repeat(4,65px);justify-content:center;gap:7px}
+#board button{height:60px;font-size:23px;padding:0}
+canvas{background:#050910;max-width:100%;touch-action:manipulation}
+.small{color:#aeb9d4;font-size:14px}
+</style>
+</head>
+<body>
+<header>
+<h1>🎮 GAMEPLACE</h1>
+<p>Play More. Have Fun. Level Up!</p>
+</header>
+<nav><a href="#home">Home</a><a href="#games">Games</a><a href="#about">About</a></nav>
+<section class="hero" id="home">
+<h2>Welcome to the Gaming Zone ⚡</h2>
+<p>12 mini-games. One place. Endless fun!</p>
+<input id="search" placeholder="Search games..." oninput="filterGames()" aria-label="Search games">
+</section>
+<main class="games" id="games"></main>
+<footer id="about">
+<h3>GAMEPLACE</h3>
+<p>Created by Suvrat Sharma</p>
+<p>Free browser games • Play and enjoy!</p>
+</footer>
+
+<div id="modal">
+<div class="panel">
+<div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
+<h2 id="gameTitle">Game</h2>
+<button onclick="closeGame()">✕ Close</button>
+</div>
+<div id="gameArea"></div>
+<p class="small">GAMEPLACE • Have fun and play fair!</p>
+</div>
+</div>
+
+<script>
+const games=[
+["🔢","Number Guess","Guess the secret number.","guess"],
+["✊","Rock Paper Scissors","Challenge the computer.","rps"],
+["⭕","Tic-Tac-Toe","Get three in a row.","tic"],
+["🎯","Click Challenge","Click the target 10 times.","click"],
+["🧠","Memory Match","Find matching pairs.","memory"],
+["➗","Math Quiz","Solve quick maths questions.","math"],
+["🎨","Color Match","Choose the displayed color.","color"],
+["⌨️","Typing Challenge","Type the word correctly.","typing"],
+["⚡","Reaction Test","Test your reaction speed.","reaction"],
+["🐍","Snake","Eat food and grow.","snake"],
+["🟣","Whack-a-Dot","Click the dot as many times as you can.","whack"],
+["🔤","Word Scramble","Unscramble the hidden word.","word"]
+];
+const list=document.getElementById("games");
+games.forEach((g,i)=>list.innerHTML+=`<article class="card" data-name="${g[1].toLowerCase()}"><div class="emoji">${g[0]}</div><h3>${g[1]}</h3><p>${g[2]}</p><button class="play" onclick="startGame('${g[3]}')">▶ Play Now</button></article>`);
+function filterGames(){let q=document.getElementById("search").value.toLowerCase();document.querySelectorAll(".card").forEach(c=>c.style.display=c.dataset.name.includes(q)?"":"none")}
+const area=()=>document.getElementById("gameArea");
+function show(title,html){document.getElementById("gameTitle").textContent=title;area().innerHTML=html;document.getElementById("modal").style.display="block"}
+let timers=[];
+function closeGame(){timers.forEach(clearInterval);timers=[];document.getElementById("modal").style.display="none"}
+function startGame(g){
+if(g==="guess")guess();
+if(g==="rps")rps();
+if(g==="tic")tic();
+if(g==="click")clickGame();
+if(g==="memory")memory();
+if(g==="math")mathGame();
+if(g==="color")colorGame();
+if(g==="typing")typing();
+if(g==="reaction")reaction();
+if(g==="snake")snake();
+if(g==="whack")whack();
+if(g==="word")wordGame();
+}
+function guess(){
+let n=Math.floor(Math.random()*100)+1,tries=0;
+show("🔢 Number Guess",`<p>Guess a number from 1 to 100.</p><input id="g" type="number" min="1" max="100" placeholder="Your guess"><button onclick="checkGuess()">Guess!</button><p id="msg">You have unlimited tries.</p>`);
+window.checkGuess=()=>{let v=Number(document.getElementById("g").value);tries++;document.getElementById("msg").textContent=!v?"Enter a number!":v===n?`Correct! 🎉 You got it in ${tries} tries.`:v<n?"Too low! Try again.":"Too high! Try again."}
+}
+function rps(){
+show("✊ Rock Paper Scissors",`<p id="r">Choose your move!</p><button onclick="move('Rock')">✊ Rock</button><button onclick="move('Paper')">✋ Paper</button><button onclick="move('Scissors')">✌️ Scissors</button>`);
+window.move=x=>{let a=["Rock","Paper","Scissors"][Math.floor(Math.random()*3)],v=x===a?"It's a draw!":((x==="Rock"&&a==="Scissors")||(x==="Paper"&&a==="Rock")||(x==="Scissors"&&a==="Paper"))?"You win! 🎉":"Computer wins!";document.getElementById("r").textContent=`You: ${x} | Computer: ${a}. ${v}`}
+}
+function tic(){
+let b=Array(9).fill(""),turn="X",done=false;
+show("⭕ Tic-Tac-Toe",`<div id="tt" style="display:grid;grid-template-columns:repeat(3,75px);gap:5px;justify-content:center"></div><p id="tm">Your turn: X</p><button onclick="tic()">Restart</button>`);
+let el=document.getElementById("tt");
+b.forEach((_,i)=>{let x=document.createElement("button");x.className="cell";x.onclick=()=>{if(done||b[i])return;b[i]=turn;x.textContent=turn;if([ [0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6] ].some(a=>a.every(j=>b[j]===turn))){document.getElementById("tm").textContent=turn+" wins! 🎉";done=true}else if(b.every(Boolean)){document.getElementById("tm").textContent="It's a draw!";done=true}else{turn=turn==="X"?"O":"X";document.getElementById("tm").textContent="Your turn: "+turn}};el.appendChild(x)})
+}
+function clickGame(){
+let n=0;
+show("🎯 Click Challenge",`<p>Click the target 10 times!</p><h2 id="cs">0 / 10</h2><button style="font-size:28px" onclick="hit()">🎯 HIT!</button><p id="cf"></p>`);
+window.hit=()=>{if(n>=10)return;n++;document.getElementById("cs").textContent=n+" / 10";if(n===10)document.getElementById("cf").textContent="Challenge complete! 🏆"}
+}
+function memory(){
+let vals=["🍎","🍋","🍇","🐱","🚀","⚽","🍎","🍋","🍇","🐱","🚀","⚽"].sort(()=>Math.random()-.5),open=[],matched=new Set(),moves=0;
+show("🧠 Memory Match",`<p>Find all 6 matching pairs.</p><p id="mm">Moves: 0</p><div id="board"></div><button onclick="memory()">Restart</button>`);
+let b=document.getElementById("board");
+vals.forEach((v,i)=>{let x=document.createElement("button");x.textContent="❔";x.onclick=()=>{if(matched.has(i)||open.includes(i)||open.length===2)return;x.textContent=v;open.push(i);if(open.length===2){moves++;document.getElementById("mm").textContent="Moves: "+moves;if(vals[open[0]]===vals[open[1]]){open.forEach(j=>matched.add(j));open=[];if(matched.size===12)document.getElementById("mm").textContent="You won in "+moves+" moves! 🏆"}else{let pair=[...open];setTimeout(()=>{pair.forEach(j=>{if(!matched.has(j))b.children[j].textContent="❔"});open=[]},700)}}};b.appendChild(x)})
+}
+function mathGame(){
+let score=0,n=0,ans=0;
+show("➗ Math Quiz",`<h3 id="mq"></h3><input id="ma" type="number" placeholder="Answer"><button onclick="answerMath()">Submit</button><p id="ms">Score: 0 / 10</p>`);
+function next(){if(n===10){document.getElementById("mq").textContent="Quiz complete!";document.getElementById("ms").textContent=`Final score: ${score} / 10`;return}let a=Math.floor(Math.random()*12)+1,b=Math.floor(Math.random()*12)+1;ans=a+b;document.getElementById("mq").textContent=`${a} + ${b} = ?`;document.getElementById("ma").value=""}
+window.answerMath=()=>{if(n>=10)return;if(document.getElementById("ma").value==="")return;if(Number(document.getElementById("ma").value)===ans)score++;n++;document.getElementById("ms").textContent=`Score: ${score} / 10`;next()};next()
+}
+function colorGame(){
+let colors=["RED","BLUE","GREEN","ORANGE","PURPLE"],correct="";
+function next(){correct=colors[Math.floor(Math.random()*colors.length)];let shown=colors[Math.floor(Math.random()*colors.length)];document.getElementById("cq").textContent="Tap the color name: "+correct;document.getElementById("ct").textContent=shown;document.getElementById("ct").style.color=shown.toLowerCase();document.getElementById("cr").textContent=""}
+show("🎨 Color Match",`<h3 id="cq"></h3><h1 id="ct"></h1><div id="cb"></div><p id="cr"></p>`);
+colors.forEach(c=>{let x=document.createElement("button");x.textContent=c;x.onclick=()=>{document.getElementById("cr").textContent=c===correct?"Correct! 🎉":"Try again!";if(c===correct)next()};document.getElementById("cb").appendChild(x)});next()
+}
+function typing(){
+let words=["planet","rocket","gaming","purple","winner","keyboard","dragon","school","puzzle","champion"],w=words[Math.floor(Math.random()*words.length)],start=0;
+show("⌨️ Typing Challenge",`<p>Type this word as quickly as you can:</p><h2 id="tw">${w}</h2><input id="ti" placeholder="Type here" autocomplete="off"><p id="tr"></p><button onclick="typing()">New Word</button>`);
+let inp=document.getElementById("ti");inp.focus();inp.oninput=()=>{if(inp.value===w){document.getElementById("tr").textContent="Correct! 🎉";w=words[Math.floor(Math.random()*words.length)];document.getElementById("tw").textContent=w;inp.value=""}}
+}
+function reaction(){
+show("⚡ Reaction Test",`<p id="rr">Press Start, then wait for the green signal.</p><button id="rb" onclick="beginReaction()">Start</button>`);
+let ready=false,go=false,stamp=0;
+window.beginReaction=()=>{ready=true;go=false;let btn=document.getElementById("rb");btn.disabled=true;document.getElementById("rr").textContent="Wait for green...";let t=setTimeout(()=>{if(!ready)return;go=true;stamp=Date.now();btn.textContent="CLICK NOW!";btn.style.background="#39e879";document.getElementById("rr").textContent="GO! ⚡"},1000+Math.random()*3000);timers.push(t);btn.onclick=()=>{if(!ready)return;if(!go){ready=false;clearTimeout(t);document.getElementById("rr").textContent="Too soon! Try again.";btn.textContent="Try again";btn.disabled=false;btn.style.background="";btn.onclick=window.beginReaction}else{ready=false;document.getElementById("rr").textContent="Your reaction: "+(Date.now()-stamp)+" ms";btn.textContent="Try again";btn.disabled=false;btn.style.background="";btn.onclick=window.beginReaction}}}
+}
+function snake(){
+show("🐍 Snake",`<p>Use arrow keys to eat food. Avoid walls and yourself!</p><canvas id="sc" width="300" height="300"></canvas><p id="ss">Score: 0</p><button onclick="snake()">Restart</button>`);
+let c=document.getElementById("sc"),ctx=c.getContext("2d"),s=[{x:7,y:7}],d={x:1,y:0},food={x:3,y:3},score=0,alive=true;
+function key(e){let m={ArrowUp:{x:0,y:-1},ArrowDown:{x:0,y:1},ArrowLeft:{x:-1,y:0},ArrowRight:{x:1,y:0}}[e.key];if(m&&!(m.x===-d.x&&m.y===-d.y)){d=m;e.preventDefault()}}
+document.addEventListener("keydown",key);
+let timer=setInterval(()=>{if(!alive)return;let h={x:s[0].x+d.x,y:s[0].y+d.y};if(h.x<0||h.y<0||h.x>=15||h.y>=15||s.some(p=>p.x===h.x&&p.y===h.y)){alive=false;document.getElementById("ss").textContent="Game over! Score: "+score;clearInterval(timer);document.removeEventListener("keydown",key);return}s.unshift(h);if(h.x===food.x&&h.y===food.y){score++;food={x:Math.floor(Math.random()*15),y:Math.floor(Math.random()*15)};document.getElementById("ss").textContent="Score: "+score}else s.pop();ctx.fillStyle="#050910";ctx.fillRect(0,0,300,300);ctx.fillStyle="#ffcc55";ctx.fillRect(food.x*20,food.y*20,18,18);ctx.fillStyle="#54e8ff";s.forEach(p=>ctx.fillRect(p.x*20,p.y*20,18,18))},140);
+timers.push(timer)
+}
+function whack(){
+let score=0,left=15;
+show("🟣 Whack-a-Dot",`<p>Click the purple dot as many times as you can in 15 seconds!</p><h3 id="ws">Score: 0 | Time: 15</h3><div id="wd" style="height:120px;position:relative;background:#090d1b;border-radius:12px"></div><button onclick="whack()">Restart</button>`);
+let d=document.getElementById("wd");
+function spawn(){d.innerHTML="";if(left<=0)return;let x=document.createElement("button");x.textContent="●";x.style.cssText=`position:absolute;left:${Math.random()*75}%;top:${Math.random()*60}%;background:#a56bff;color:white;border-radius:50%;width:45px;height:45px`;x.onclick=()=>{score++;document.getElementById("ws").textContent=`Score: ${score} | Time: ${left}`;spawn()};d.appendChild(x)}
+spawn();let t=setInterval(()=>{left--;document.getElementById("ws").textContent=`Score: ${score} | Time: ${left}`;if(left<=0){clearInterval(t);d.innerHTML="<p>Time's up! 🏆</p>"}},1000);timers.push(t)
+}
+function wordGame(){
+let words=["planet","rocket","puzzle","dragon","guitar","castle","orange","silver"],w=words[Math.floor(Math.random()*words.length)],scramble;
+do{scramble=w.split("").sort(()=>Math.random()-.5).join("")}while(scramble===w);
+show("🔤 Word Scramble",`<p>Unscramble the letters:</p><h2 id="sq">${scramble.toUpperCase()}</h2><input id="si" placeholder="Your answer"><button onclick="checkWord()">Check</button><p id="sr"></p><button onclick="wordGame()">New Word</button>`);
+window.checkWord=()=>{document.getElementById("sr").textContent=document.getElementById("si").value.trim().toLowerCase()===w?"Correct! 🎉":"Not quite. Try again!"}
+}
+</script>
+</body>
+</html>
